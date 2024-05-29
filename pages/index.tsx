@@ -10,7 +10,7 @@ const Home = () => {
   const handleJoin = () => {
     if (nickname && socket) {
       socket.emit('join', nickname);
-      router.push('/waiting');
+      router.push('/rooms');
     }
   };
 

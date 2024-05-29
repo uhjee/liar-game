@@ -1,29 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { useSocket } from '../components/provider/SocketProvider';
-import { CategoryCountMap } from '../types';
-
-const categories = [
-  '동물',
-  '과일',
-  '채소',
-  '직업',
-  '국가',
-  '색깔',
-  '가전제품',
-  '운동',
-  '음식',
-  '음악 장르',
-];
+import { useSocket } from '../../components/provider/SocketProvider';
+import { CategoryCountMap, StringArrayMap } from '../../types';
+import useRoomId from '../../hooks/useRoomId';
 
 const SelectCategory = () => {
+  const roomId = useRoomId();
   const router = useRouter();
   const [isSelected, setSelected] = useState(false);
   const { socket } = useSocket();
+  const [categories, setCategories] = useState<string[]>([]);
   const [categoryMap, setCategoryMap] = useState<CategoryCountMap>({});
 
   useEffect(() => {
     if (socket) {
+      socket.emit('readyToSelectCategory', roomId);
+
+      socket.on('initialCategories', (categories: string[]) => {
+        setCategories(categories);
+      });
+
       socket.on('updateCategories', (categoryMap: CategoryCountMap) => {
         console.log('Updated Categories:', categoryMap);
         setCategoryMap(categoryMap);
@@ -38,7 +34,7 @@ const SelectCategory = () => {
         socket.off('successSelectCategories');
       };
     }
-  }, [socket, router]);
+  }, [socket, router, roomId]);
 
   const handleCategorySelect = (category: string) => {
     if (socket) {

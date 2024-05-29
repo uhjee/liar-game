@@ -1,6 +1,11 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { ClientToServerEvents, ServerToClientEvents, User } from '../../types';
+import {
+  ClientToServerEvents,
+  RoomInfo,
+  ServerToClientEvents,
+  User,
+} from '../../types';
 
 type ClientSocketType = Socket<ServerToClientEvents, ClientToServerEvents>;
 
@@ -9,6 +14,7 @@ interface ISocketContext {
   isConnected: boolean;
   users: User[];
   isHost: boolean;
+  rooms: RoomInfo[];
 }
 
 const SocketContext = createContext<ISocketContext>({
@@ -16,6 +22,7 @@ const SocketContext = createContext<ISocketContext>({
   isConnected: false,
   users: [],
   isHost: false,
+  rooms: [],
 });
 
 export const useSocket = () => useContext(SocketContext);
@@ -24,6 +31,7 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   const [socket, setSocket] = useState<ClientSocketType | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [isHost, setIsHost] = useState(false);
+  const [rooms, setRooms] = useState<RoomInfo[]>([]);
 
   const [isConnected, setIsConnected] = useState(false);
 
@@ -35,6 +43,10 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
       setIsConnected(true);
+    });
+
+    socket.on('updateRooms', (roomInfos: RoomInfo[]) => {
+      setRooms(roomInfos);
     });
 
     socket.on('checkAuth', ({ isHost }) => {
@@ -60,7 +72,9 @@ export const SocketProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected, users, isHost }}>
+    <SocketContext.Provider
+      value={{ socket, isConnected, users, isHost, rooms }}
+    >
       {children}
     </SocketContext.Provider>
   );

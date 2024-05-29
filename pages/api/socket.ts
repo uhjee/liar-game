@@ -12,8 +12,13 @@ import {
   StringMap,
 } from '../../types';
 import path from 'path';
-import fs from 'fs/promises'; // Note the use of fs/promises for async file operations
+import fs from 'fs/promises'; // 비동기 파일 작업을 위한 fs/promises 사용
+import { title } from 'process';
+import Game from '../../service/class/Game';
 
+/**
+ * NextApiResponse 타입을 확장하여 소켓 서버를 포함.
+ */
 type NextApiResponseWithSocket = NextApiResponse & {
   socket: {
     server: HTTPServer & {
@@ -28,7 +33,11 @@ type NextApiResponseWithSocket = NextApiResponse & {
   };
 };
 
+/** 게임에 참여하는 사용자 목록 */
 let users: User[] = [];
+let rooms: Game[] = [];
+
+/** 초기 게임 상태 */
 let gameState = {
   started: false,
   selectedCategoryMap: {} as CategoryCountMap,
@@ -36,6 +45,9 @@ let gameState = {
   isExecutedRandom: false,
 };
 
+/**
+ * 게임 상태를 초기값으로 리셋.
+ */
 const initialGameState = () => {
   gameState = {
     started: false,
@@ -45,10 +57,20 @@ const initialGameState = () => {
   };
 };
 
+/**
+ * 주어진 단어 배열에서 랜덤 단어 선택.
+ * @param {string[]} words - 선택할 단어 배열.
+ * @returns {string} - 랜덤으로 선택된 단어.
+ */
 const getRandomWord = (words: string[]): string => {
   return words[Math.floor(Math.random() * words.length)];
 };
 
+/**
+ * 선택된 카테고리에 따라 사용자들에게 랜덤 단어 배포.
+ * @param {string} category - 단어를 선택할 카테고리.
+ * @param {boolean} isExecutedRandom - 랜덤 단어 배포가 이미 실행되었는지 여부.
+ */
 const makeRandomWordByUsers = async (
   category: string,
   isExecutedRandom = false,
@@ -83,6 +105,28 @@ const makeRandomWordByUsers = async (
   } catch (e) {}
 };
 
+const getGameByRoomId = (roomId: number) => {
+  return rooms.find((r) => r.getId() === roomId);
+};
+
+const getUserBySocketId = (socketId: string) => {
+  return users.find((u) => u.socketId === socketId);
+};
+
+const getRoomInfos = (rooms: Game[]) => {
+  console.log({ rooms });
+  return rooms.map((i) => ({
+    roomId: i.getId(),
+    title: i.getTitle(),
+    headCount: i.getHeadCount(),
+  }));
+};
+
+/**
+ * Socket.IO 연결 및 다양한 게임 이벤트 처리.
+ * @param {NextApiRequest} req - Next.js API 요청 객체.
+ * @param {NextApiResponseWithSocket} res - 소켓 서버가 확장된 Next.js API 응답 객체.
+ */
 const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
   console.log('?');
   if (!res.socket.server.io) {
@@ -95,54 +139,99 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
     >(res.socket.server, {
       path: '/api/socket',
     });
-
     res.socket.server.io = io;
 
     io.on('connect', (socket) => {
       console.log('New connection');
 
-      /**
-       * 참가자 닉네임 입력을 받았을 때 핸들러
-       * @param   {[type]}  join      [join description]
-       * @param   {string}  nickname  [nickname description]
-       *
-       * @return  {[type]}            [return description]
-       */
       socket.on('join', (nickname: string) => {
         if (!users.find((user) => user.nickname === nickname)) {
-          const isHost = users.length === 0;
-          users.push({ nickname, isHost, socketId: socket.id });
+          users.push({ nickname, socketId: socket.id });
           console.log({ users });
-          if (isHost) {
-            io.to(socket.id).emit('checkAuth', {
-              isHost,
-            });
-          }
-          io.emit('updateUsers', users);
+          const roomInfos = getRoomInfos(rooms);
+          io.emit('updateRooms', roomInfos);
         }
       });
 
-      /**
-       * 방장이 게임 시작을 눌렀을 때 핸들러
-       *
-       * @param   {[type]}  startGame  [startGame description]
-       *
-       * @return  {[type]}             [return description]
-       */
-      socket.on('startGame', () => {
-        gameState.started = true;
-        gameState.selectedCategoryMap = {};
-        io.emit('gameStarted');
+      socket.on('newRoom', (title) => {
+        const newRoom = new Game(title);
+        rooms.push(newRoom);
+
+        const roomInfos = getRoomInfos(rooms);
+        io.emit('updateRooms', roomInfos);
       });
 
-      /**
-       * 참가자들이 카테고리를 투표했을 때 핸들러
-       *
-       * @param   {[type]}  selectCategory  [selectCategory description]
-       * @param   {string}  category        [category description]
-       *
-       * @return  {[type]}                  [return description]
-       */
+      socket.on('joinRoom', (roomIdStr: string) => {
+        const roomId = Number(roomIdStr);
+        const user = getUserBySocketId(socket.id);
+        const room = getGameByRoomId(roomId);
+        if (user && room) {
+          // game instance에 인원 추가
+          room.addUser(user);
+          // socket room에 추가
+          socket.join(roomIdStr);
+
+          const roomInfos = getRoomInfos(rooms);
+          // 룸 정보
+          io.emit('updateRooms', roomInfos);
+
+          // 방 인원
+          io.to(roomIdStr).emit('updateUsers', room.getUsers());
+
+          // 방장 처리
+          if (room.getHost()?.socketId === socket.id) {
+            io.to(socket.id).emit('checkAuth', {
+              isHost: true,
+            });
+          }
+        }
+      });
+
+      socket.on('leaveRoom', (roomIdStr: string) => {
+        const roomId = Number(roomIdStr);
+        const user = getUserBySocketId(socket.id);
+        const room = getGameByRoomId(roomId);
+        if (user && room) {
+          const wasHost = room.getHost()?.socketId === socket.id;
+
+          room.deleteUser(user);
+          socket.leave(roomIdStr);
+          const roomInfos = getRoomInfos(rooms);
+          // 룸 정보
+          io.emit('updateRooms', roomInfos);
+
+          // 방 인원
+          io.to(roomIdStr).emit('updateUsers', room.getUsers());
+
+          // 방장 처리
+          if (wasHost) {
+            const nextHost = room.getHost();
+            if (!!nextHost) {
+              io.to(nextHost.socketId).emit('checkAuth', {
+                isHost: true,
+              });
+            }
+          }
+        }
+      });
+
+      socket.on('startGame', (roomIdStr: string) => {
+        const roomId = Number(roomIdStr);
+        const room = getGameByRoomId(roomId);
+        if (room) {
+          room.setIsStarted(true);
+          io.to(roomIdStr).emit('gameStarted');
+        }
+      });
+
+      socket.on('readyToSelectCategory', (roomIdStr: string) => {
+        const roomId = Number(roomIdStr);
+        const room = getGameByRoomId(roomId);
+        if (room) {
+          io.to(roomIdStr).emit('initialCategories', room.getCategories());
+        }
+      });
+
       socket.on('selectCategory', (category: string) => {
         if (Object.keys(gameState.selectedCategoryMap).includes(category)) {
           Object.entries(gameState.selectedCategoryMap).forEach(([k, v]) => {
