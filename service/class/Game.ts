@@ -180,4 +180,8 @@ export default class Game {
     this.setWordByUser(wordByUser);
     this.setIsExecutedRandom(true);
   }
+
+  public voteCategory() {
+    
+  }
 }

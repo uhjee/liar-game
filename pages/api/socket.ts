@@ -232,7 +232,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         }
       });
 
-      socket.on('selectCategory', (category: string) => {
+      socket.on('selectCategory', (category: string, roomIdStr: string) => {
         if (Object.keys(gameState.selectedCategoryMap).includes(category)) {
           Object.entries(gameState.selectedCategoryMap).forEach(([k, v]) => {
             if (k === category) {

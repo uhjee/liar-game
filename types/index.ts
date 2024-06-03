@@ -18,8 +18,8 @@ export interface ClientToServerEvents {
   leaveRoom: (roomId: string) => void;
   startGame: (roomId: string) => void;
   readyToSelectCategory: (roomId: string) => void;
+  selectCategory: (category: string, roomId: string) => void;
   readyToReceiveWord: () => void;
-  selectCategory: (category: string) => void;
 }
 
 export interface User {

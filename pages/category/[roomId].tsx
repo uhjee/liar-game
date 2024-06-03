@@ -38,7 +38,7 @@ const SelectCategory = () => {
 
   const handleCategorySelect = (category: string) => {
     if (socket) {
-      socket.emit('selectCategory', category);
+      socket.emit('selectCategory', category, roomId);
       setSelected(!isSelected);
     }
   };
