@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSocket } from '../../components/provider/SocketProvider';
 import { useRouter } from 'next/router';
+import Layout from "../Layout";
 
 const ShowWord = () => {
   const [word, setWord] = useState<string | null>(null);
@@ -26,10 +27,10 @@ const ShowWord = () => {
   }, [socket, router.query.category]);
 
   return (
-    <div>
-      <h1>당신의 단어는?</h1>
+    <Layout>
+      <h3>당신의 단어는?</h3>
       {word && <p>{word}</p>}
-    </div>
+    </Layout>
   );
 };
 

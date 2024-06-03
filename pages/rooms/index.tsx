@@ -2,6 +2,7 @@ import { ChangeEventHandler, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useSocket } from '../../components/provider/SocketProvider';
 import { RoomInfo } from '../../types';
+import Layout from '../Layout';
 
 const Rooms = () => {
   const router = useRouter();
@@ -36,8 +37,8 @@ const Rooms = () => {
   };
 
   return (
-    <div>
-      <h1>방 목록</h1>
+    <Layout>
+      <h3>방 목록</h3>
       <ul>
         {rooms.map((room, index) => (
           <li key={index} onClick={(e) => onClickRoomHandler(room)}>
@@ -52,7 +53,7 @@ const Rooms = () => {
       >
         방 만들기
       </button>
-    </div>
+    </Layout>
   );
 };
 

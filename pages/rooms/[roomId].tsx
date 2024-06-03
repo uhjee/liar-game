@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useSocket } from '../../components/provider/SocketProvider';
 import useRoomId from '../../hooks/useRoomId';
+import Layout from "../Layout";
 
 const Waiting = () => {
   const router = useRouter();
@@ -43,8 +44,8 @@ const Waiting = () => {
   };
 
   return (
-    <div>
-      <h1>{router.query.roomId} - 대기 중...</h1>
+    <Layout>
+      <h3>{router.query.roomId} - 대기 중...</h3>
       <ul>
         {users.map((user, index) => (
           <li key={index}>
@@ -53,7 +54,7 @@ const Waiting = () => {
         ))}
       </ul>
       {!!isHost && <button onClick={handleStartGame}>게임 시작</button>}
-    </div>
+    </Layout>
   );
 };
 
