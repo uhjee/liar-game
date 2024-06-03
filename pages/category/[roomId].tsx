@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import { useSocket } from '../../components/provider/SocketProvider';
 import { CategoryCountMap, StringArrayMap } from '../../types';
 import useRoomId from '../../hooks/useRoomId';
+import Layout from "../Layout";
 
 const SelectCategory = () => {
   const roomId = useRoomId();
@@ -44,8 +45,8 @@ const SelectCategory = () => {
   };
 
   return (
-    <div>
-      <h1>범주 선택</h1>
+    <Layout>
+      <h3>범주 선택</h3>
       <ul>
         {categories.map((category, index) => (
           <li key={index}>
@@ -59,7 +60,7 @@ const SelectCategory = () => {
           </li>
         ))}
       </ul>
-    </div>
+    </Layout>
   );
 };
 

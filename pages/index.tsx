@@ -1,30 +1,52 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
-import { useSocket } from '../components/provider/SocketProvider';
+import { useState } from "react";
+import { useRouter } from "next/router";
+import { useSocket } from "../components/provider/SocketProvider";
+import styled from "styled-components";
+
+const backgroundImage = "/img/background.png";
+
+const Container = styled.div`
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-image: url(${backgroundImage});
+  background-repeat: no-repeat;
+  background-size: cover;
+`;
+const Content = styled.div`
+  position: absolute;
+  top: 33vh;
+  left: 126vh;
+  width: 360px;
+  height: 250px;
+  overflow: auto;
+`;
 
 const Home = () => {
-  const [nickname, setNickname] = useState<string>('');
+  const [nickname, setNickname] = useState<string>("");
   const router = useRouter();
   const { socket } = useSocket();
 
   const handleJoin = () => {
     if (nickname && socket) {
-      socket.emit('join', nickname);
-      router.push('/rooms');
+      socket.emit("join", nickname);
+      router.push("/rooms");
     }
   };
 
   return (
-    <div>
-      <h1>라이어 게임</h1>
-      <input
-        type="text"
-        placeholder="닉네임 입력"
-        value={nickname}
-        onChange={(e) => setNickname(e.target.value)}
-      />
-      <button onClick={handleJoin}>참여</button>
-    </div>
+    <Container>
+      <Content>
+        <h3>라이어 게임</h3>
+        <input
+          type="text"
+          placeholder="닉네임 입력"
+          value={nickname}
+          onChange={(e) => setNickname(e.target.value)}
+        />
+        <button onClick={handleJoin}>참여</button>
+      </Content>
+    </Container>
   );
 };
 
