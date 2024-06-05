@@ -45,66 +45,6 @@ let gameState = {
   isExecutedRandom: false,
 };
 
-/**
- * 게임 상태를 초기값으로 리셋.
- */
-const initialGameState = () => {
-  gameState = {
-    started: false,
-    selectedCategoryMap: {} as CategoryCountMap,
-    wordByUser: {} as StringMap,
-    isExecutedRandom: false,
-  };
-};
-
-/**
- * 주어진 단어 배열에서 랜덤 단어 선택.
- * @param {string[]} words - 선택할 단어 배열.
- * @returns {string} - 랜덤으로 선택된 단어.
- */
-const getRandomWord = (words: string[]): string => {
-  return words[Math.floor(Math.random() * words.length)];
-};
-
-/**
- * 선택된 카테고리에 따라 사용자들에게 랜덤 단어 배포.
- * @param {string} category - 단어를 선택할 카테고리.
- * @param {boolean} isExecutedRandom - 랜덤 단어 배포가 이미 실행되었는지 여부.
- */
-const makeRandomWordByUsers = async (
-  category: string,
-  isExecutedRandom = false,
-) => {
-  if (isExecutedRandom) {
-    return;
-  }
-
-  const filePath = path.join(process.cwd(), 'data', 'words.json');
-  try {
-    const data = await fs.readFile(filePath, 'utf8');
-    const wordMap: StringArrayMap = JSON.parse(data);
-    const words = wordMap[category];
-    const commonWord = getRandomWord(words);
-    words.splice(
-      words.findIndex((w) => w === commonWord),
-      1,
-    );
-
-    const liarIndex = Math.floor(Math.random() * users.length);
-    const wordByUser: StringMap = {};
-    users.forEach((user, index) => {
-      if (index === liarIndex) {
-        wordByUser[user.socketId] = getRandomWord(words);
-      } else {
-        wordByUser[user.socketId] = commonWord;
-      }
-    });
-    console.log({ wordByUser });
-    gameState.wordByUser = wordByUser;
-    gameState.isExecutedRandom = true;
-  } catch (e) {}
-};
-
 const getGameByRoomId = (roomId: number) => {
   return rooms.find((r) => r.getId() === roomId);
 };
@@ -233,41 +173,21 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
       });
 
       socket.on('selectCategory', (category: string, roomIdStr: string) => {
-        if (Object.keys(gameState.selectedCategoryMap).includes(category)) {
-          Object.entries(gameState.selectedCategoryMap).forEach(([k, v]) => {
-            if (k === category) {
-              gameState.selectedCategoryMap[category] = v + 1;
-            }
-          });
-        } else {
-          gameState.selectedCategoryMap[category] = 1;
-        }
-        console.log({ categoryMap: gameState.selectedCategoryMap });
-        io.emit('updateCategories', gameState.selectedCategoryMap);
-
-        // 전원 투표 완료 판단
-        if (
-          Object.values(gameState.selectedCategoryMap).reduce(
-            (acc, curr) => (acc += curr),
-          ) === users.length
-        ) {
-          const maxCatetory = Object.entries(
-            gameState.selectedCategoryMap,
-          ).reduce(
-            (max, curr) => {
-              let newMax = max;
-              if (max[1] === curr[1]) {
-                newMax = [max, curr][Math.floor(Math.random() * 2)];
-              } else if (max[1] < curr[1]) {
-                newMax = curr;
-              }
-              return newMax;
-            },
-            ['', 0],
+        const roomId = Number(roomIdStr);
+        const room = getGameByRoomId(roomId);
+        if (room) {
+          const isAllVoted = room.voteCategory(category);
+          console.log({ categoryMap: room.getSelectCategoryMap() });
+          io.to(roomIdStr).emit(
+            'updateCategories',
+            room.getSelectCategoryMap(),
           );
 
-          io.emit('successSelectCategories', maxCatetory[0]);
-          makeRandomWordByUsers(maxCatetory[0], gameState.isExecutedRandom);
+          // 전원 투표 완료 후 수행
+          if (isAllVoted) {
+            const maxCatetory = room.getMaxCountCategory();
+            io.to(roomIdStr).emit('successSelectCategories', maxCatetory);
+          }
         }
       });
 

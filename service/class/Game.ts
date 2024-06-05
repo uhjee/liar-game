@@ -146,6 +146,64 @@ export default class Game {
   }
 
   /**
+   * 사용자 개인이 선택한 카테고리를 Map에 [카테고리명: 카운트숫자] 형태로 삽입, 수정한다.
+   * @param   {string}  category  [category description]
+   * @return  {boolean}            투표가 완료되었는지 여부를 반환
+   */
+  public voteCategory(category: string): boolean {
+    const categoryMap = this.getSelectCategoryMap();
+    if (Object.keys(categoryMap).includes(category)) {
+      Object.entries(categoryMap).forEach(([k, v]) => {
+        if (k === category) {
+          categoryMap[category] = v + 1;
+        }
+      });
+    } else {
+      categoryMap[category] = 1;
+    }
+    this.setSelectCategoryMap(categoryMap);
+
+    const isAllVoted = this.isAllVotedCategory();
+    if (isAllVoted) {
+      this.makeRandomWordByUsers(this.getMaxCountCategory());
+    }
+    return isAllVoted;
+  }
+
+  /**
+   * 모든 참가자들이 카테고리를 선택했는지 여부를 반환한다.
+   * @return  {boolean} [return description]
+   */
+  public isAllVotedCategory(): boolean {
+    return (
+      Object.values(this.getSelectCategoryMap()).reduce(
+        (acc, curr) => (acc += curr),
+      ) === this.getUsers().length
+    );
+  }
+
+  /**
+   * 투표된 카테고리 중 가장 높은 투표를 반은 카테고리를 반환한다.
+   * max 카테고리가 2개 이상일 경우, 그 중 랜덤으로 반환한다.
+   * @return  {string}  [return description]
+   */
+  public getMaxCountCategory(): string {
+    const maxCatetoryEntry = Object.entries(this.getSelectCategoryMap()).reduce(
+      (max, curr) => {
+        let newMax = max;
+        if (max[1] === curr[1]) {
+          newMax = [max, curr][Math.floor(Math.random() * 2)];
+        } else if (max[1] < curr[1]) {
+          newMax = curr;
+        }
+        return newMax;
+      },
+      ['', 0],
+    );
+    return maxCatetoryEntry[0];
+  }
+
+  /**
    * 주어진 단어 배열에서 랜덤 단어 선택.
    * @param {string[]} words - 선택할 단어 배열.
    * @returns {string} - 랜덤으로 선택된 단어.
@@ -181,7 +239,12 @@ export default class Game {
     this.setIsExecutedRandom(true);
   }
 
-  public voteCategory() {
-    
+  /**
+   * 특정 socketId(유저)의 word를 반환한다.
+   * @param   {string}  socketId  [socketId description]
+   * @return  {[type]}            [return description]
+   */
+  public getWordBySocketId(socketId: string) {
+    return this.getWordByUser()[socketId];
   }
 }
