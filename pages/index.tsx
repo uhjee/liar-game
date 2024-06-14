@@ -1,26 +1,10 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import { useSocket } from "../components/provider/SocketProvider";
-import styled from "styled-components";
+import Layout from "./Layout";
 
 const backgroundImage = "/img/background.png";
 
-const Container = styled.div`
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  background-image: url(${backgroundImage});
-  background-repeat: no-repeat;
-  background-size: cover;
-`;
-const Content = styled.div`
-  position: absolute;
-  top: 33vh;
-  left: 126vh;
-  width: 360px;
-  height: 250px;
-  overflow: auto;
-`;
 
 const Home = () => {
   const [nickname, setNickname] = useState<string>("");
@@ -35,8 +19,7 @@ const Home = () => {
   };
 
   return (
-    <Container>
-      <Content>
+    <Layout>
         <h3>라이어 게임</h3>
         <input
           type="text"
@@ -45,8 +28,7 @@ const Home = () => {
           onChange={(e) => setNickname(e.target.value)}
         />
         <button onClick={handleJoin}>참여</button>
-      </Content>
-    </Container>
+    </Layout>
   );
 };
 
