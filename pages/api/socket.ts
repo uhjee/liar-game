@@ -177,7 +177,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         const room = getGameByRoomId(roomId);
         if (room) {
           const isAllVoted = room.voteCategory(category);
-          console.log({ categoryMap: room.getSelectCategoryMap() });
+          // console.log({ categoryMap: room.getSelectCategoryMap() });
           io.to(roomIdStr).emit(
             'updateCategories',
             room.getSelectCategoryMap(),
@@ -191,10 +191,14 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         }
       });
 
-      socket.on('readyToReceiveWord', async () => {
-        const socketId = socket.id;
-        const userWord = gameState.wordByUser[socketId];
-        io.to(socket.id).emit('assignWords', userWord);
+      socket.on('readyToReceiveWord', (roomIdStr: string) => {
+        const roomId = Number(roomIdStr);
+        const room = getGameByRoomId(roomId);
+        if (room) {
+          const socketId = socket.id;
+          const userWord = room.getWordBySocketId(socketId);
+          io.to(socket.id).emit('assignWords', userWord);
+        }
       });
 
       socket.on('disconnect', () => {

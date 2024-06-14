@@ -1,19 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useSocket } from '../../components/provider/SocketProvider';
-import { useRouter } from 'next/router';
-import Layout from "../Layout";
+import Layout from '../Layout';
+import useRoomId from '../../hooks/useRoomId';
 
 const ShowWord = () => {
+  const roomId = useRoomId();
   const [word, setWord] = useState<string | null>(null);
   const { socket } = useSocket();
 
-  const router = useRouter();
-  console.log(router.query.category);
-
   useEffect(() => {
     if (socket) {
-      if (!!router.query.category) {
-        socket.emit('readyToReceiveWord');
+      if (!!roomId) {
+        socket.emit('readyToReceiveWord', roomId);
 
         socket.on('assignWords', (word) => {
           setWord(word);
@@ -24,7 +22,7 @@ const ShowWord = () => {
         socket.off('gameStarted');
       };
     }
-  }, [socket, router.query.category]);
+  }, [socket, roomId]);
 
   return (
     <Layout>
