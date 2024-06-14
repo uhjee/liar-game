@@ -3,7 +3,7 @@ import { useRouter } from 'next/router';
 import { useSocket } from '../../components/provider/SocketProvider';
 import { CategoryCountMap, StringArrayMap } from '../../types';
 import useRoomId from '../../hooks/useRoomId';
-import Layout from "../Layout";
+import Layout from '../Layout';
 
 const SelectCategory = () => {
   const roomId = useRoomId();
@@ -27,7 +27,7 @@ const SelectCategory = () => {
       });
 
       socket.on('successSelectCategories', (maxCategory: string) => {
-        router.push(`/word/${maxCategory}`);
+        router.push(`/word/${roomId}`);
       });
 
       return () => {

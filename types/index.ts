@@ -19,7 +19,7 @@ export interface ClientToServerEvents {
   startGame: (roomId: string) => void;
   readyToSelectCategory: (roomId: string) => void;
   selectCategory: (category: string, roomId: string) => void;
-  readyToReceiveWord: () => void;
+  readyToReceiveWord: (roomId: string) => void;
 }
 
 export interface User {

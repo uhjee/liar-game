@@ -165,6 +165,7 @@ export default class Game {
 
     const isAllVoted = this.isAllVotedCategory();
     if (isAllVoted) {
+      console.log({ isAllVoted });
       this.makeRandomWordByUsers(this.getMaxCountCategory());
     }
     return isAllVoted;
@@ -235,6 +236,7 @@ export default class Game {
         wordByUser[user.socketId] = commonWord;
       }
     });
+    console.log({ wordByUser });
     this.setWordByUser(wordByUser);
     this.setIsExecutedRandom(true);
   }
