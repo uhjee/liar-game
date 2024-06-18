@@ -1,6 +1,6 @@
-import styled from "styled-components";
+import styled from 'styled-components';
 
-const backgroundImage = "/img/background.png";
+const backgroundImage = '/img/background.png';
 
 const Container = styled.div`
   position: relative;
@@ -19,7 +19,7 @@ const Content = styled.div`
   overflow: auto;
 `;
 
-const Layout:  React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <Container>
       <Content>{children}</Content>

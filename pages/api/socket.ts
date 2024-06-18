@@ -134,13 +134,20 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         if (user && room) {
           const wasHost = room.getHost()?.socketId === socket.id;
 
-          room.deleteUser(user);
+          const restUserCount = room.deleteUser(user.socketId);
+          console.log({ restUserCount });
           socket.leave(roomIdStr);
+          // 남은 인원이 0인 경우, 방 목록에서 제거
+          // if (restUserCount === 0) {
+          //   rooms = rooms.filter((r) => r.getId() !== roomId);
+          //   return;
+          // }
+
           const roomInfos = getRoomInfos(rooms);
-          // 룸 정보
+          // 룸 정보 업데이트
           io.emit('updateRooms', roomInfos);
 
-          // 방 인원
+          // 방 안의 사용자 정보 업데이트
           io.to(roomIdStr).emit('updateUsers', room.getUsers());
 
           // 방장 처리
@@ -202,6 +209,10 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
       });
 
       socket.on('disconnect', () => {
+        const user = getUserBySocketId(socket.id);
+        // disconnect 되는 유저가 속한 방 떠나기
+
+        // 전체 유저에서 제거
         const newUsers = users.filter((u) => u.socketId !== socket.id);
         users = newUsers;
         io.emit('updateUsers', users);
