@@ -76,16 +76,27 @@ export default class Game {
     this.users.push(user);
   }
 
-  public deleteUser(user: User) {
-    const newUsers = this.users.filter((u) => u.socketId !== user.socketId);
+  private isExistUserSocketId(socketId: string) {
+    return this.users.some((u) => u.socketId === socketId);
+  }
 
-    if (user.isHost) {
+  private getUserBySocketId(socketId: string) {
+    const found = this.users.find((u) => u.socketId === socketId);
+    return found;
+  }
+
+  public deleteUser(socketId: string): number | null {
+    if (!this.isExistUserSocketId(socketId)) {
+      return null;
+    }
+    const newUsers = this.users.filter((u) => u.socketId !== socketId);
+    if (this.getHost()?.socketId === socketId) {
       if (newUsers.length > 0) {
-        const nextHostIndex = newUsers.findIndex((u) => !u.isHost);
-        newUsers[nextHostIndex].isHost = true;
+        newUsers[0].isHost = true;
       }
     }
     this.setUsers(newUsers);
+    return newUsers.length;
   }
 
   // Getter and Setter for isStarted
