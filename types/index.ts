@@ -2,7 +2,7 @@
 
 export interface ServerToClientEvents {
   updateRooms: (roomInfos: RoomInfo[]) => void;
-  updateUsers: (users: User[]) => void;
+  updateRoomUsers: (users: User[]) => void;
   checkAuth: (auth: Auth) => void;
   gameStarted: () => void;
   initialCategories: (categories: string[]) => void;

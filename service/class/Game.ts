@@ -71,9 +71,12 @@ export default class Game {
   }
 
   public addUser(user: User) {
-    const isHost = this.getUsers().length === 0;
+    const isHost = this.getUsers().filter((u) => u.isHost).length === 0;
     user.isHost = isHost;
-    this.users.push(user);
+    const newUsers = [...this.users, user];
+    this.setUsers(newUsers);
+
+    console.log({ users: this.getUsers() });
   }
 
   private isExistUserSocketId(socketId: string) {

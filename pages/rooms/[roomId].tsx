@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useSocket } from '../../components/provider/SocketProvider';
 import useRoomId from '../../hooks/useRoomId';
-import Layout from "../Layout";
+import Layout from '../Layout';
+import { User } from '../../types';
 
 const Waiting = () => {
   const router = useRouter();
   const roomId = useRoomId();
-  const { socket, users, isHost } = useSocket();
+  const [users, setUsers] = useState<User[]>([]);
+  const [isHost, setIsHost] = useState(false);
+  const { socket } = useSocket();
 
   useEffect(() => {
     if (socket) {
@@ -27,8 +30,13 @@ const Waiting = () => {
         router.push(`/category/${roomId}`);
       });
 
+      socket.on('updateRoomUsers', (users: User[]) => {
+        setUsers(users);
+      });
+
       return () => {
         socket.off('gameStarted');
+        socket.off('updateRoomUsers');
 
         window.removeEventListener('popstate', () => {
           emitLeaveRoom();
@@ -36,6 +44,19 @@ const Waiting = () => {
       };
     }
   }, [socket, router, roomId]);
+
+  const checkHost = useCallback(
+    (users: User[]) => {
+      if (users.length > 0) {
+        setIsHost(users.some((u) => u.isHost && u.socketId === socket?.id));
+      }
+    },
+    [socket],
+  );
+
+  useEffect(() => {
+    checkHost(users);
+  }, [users, checkHost]);
 
   const handleStartGame = () => {
     if (socket) {

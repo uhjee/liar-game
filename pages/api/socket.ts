@@ -116,9 +116,9 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           io.emit('updateRooms', roomInfos);
 
           // 방 인원
-          io.to(roomIdStr).emit('updateUsers', room.getUsers());
+          io.to(roomIdStr).emit('updateRoomUsers', room.getUsers());
 
-          // 방장 처리
+          // 방장 권한 부여
           if (room.getHost()?.socketId === socket.id) {
             io.to(socket.id).emit('checkAuth', {
               isHost: true,
@@ -148,7 +148,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
           io.emit('updateRooms', roomInfos);
 
           // 방 안의 사용자 정보 업데이트
-          io.to(roomIdStr).emit('updateUsers', room.getUsers());
+          io.to(roomIdStr).emit('updateRoomUsers', room.getUsers());
 
           // 방장 처리
           if (wasHost) {
@@ -215,7 +215,7 @@ const SocketHandler = (req: NextApiRequest, res: NextApiResponseWithSocket) => {
         // 전체 유저에서 제거
         const newUsers = users.filter((u) => u.socketId !== socket.id);
         users = newUsers;
-        io.emit('updateUsers', users);
+        io.emit('updateRoomUsers', users);
         console.log({ users });
         console.log('User disconnected');
       });
